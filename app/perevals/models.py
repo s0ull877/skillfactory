@@ -2,17 +2,19 @@ from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 from users.models import UserProfile
-
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 
 class PerevalLevel(models.Model):
 
     CHOICES=(
-        ('1A', '1A'),
-        ('1B', '1B'),
-        ('2A', '2A'),
-        ('2B', '2B'),
-        ('3A', '3A'),
-        ('3B', '3B'),
+        ("", None,),
+        ('1A', '1A',),
+        ('1B', '1B',),
+        ('2A', '2A',),
+        ('2B', '2B',),
+        ('3A', '3A',),
+        ('3B', '3B',),
     )
 
     winter=models.CharField(
@@ -59,7 +61,7 @@ class Coordinates(models.Model):
 class Pereval(models.Model):
 
     beauty_title=models.CharField(
-        verbose_name='Загаловок'
+        verbose_name='Заголовок'
     )
     title=models.CharField(
         verbose_name='Название'
@@ -75,27 +77,43 @@ class Pereval(models.Model):
     add_time=models.DateTimeField(
         verbose_name='Дата добавления пользователем'
     )
-    user = models.OneToOneField(
+    user = models.ForeignKey(
         to=UserProfile, on_delete=models.CASCADE,
         verbose_name='Добавил пользователь'
     )
     coords = models.OneToOneField(
-        to=Coordinates, on_delete=models.PROTECT,
-        verbose_name='Координаты перевала'
+        to=Coordinates, on_delete=models.SET_NULL,
+        verbose_name='Координаты перевала', null=True
     )
     level = models.OneToOneField(
-        to=PerevalLevel, on_delete=models.PROTECT,
-        verbose_name='Сложность во времена года'
+        to=PerevalLevel, on_delete=models.SET_NULL,
+        verbose_name='Сложность во времена года',
+        null=True
+    )
+    created_at = models.DateTimeField(
+        verbose_name='Дата создания',
+        auto_now_add=True, editable=False
     )
 
-    
-
     def __str__(self) -> str:
-        return f'{self.beautyTitle} {self.title} | {self.user}'
+        return f'{self.connect}'.join([self.beauty_title, self.title, self.other_titles])
 
     class Meta:
 
         db_table = 'pereval_added'
+
+
+@receiver(pre_delete, sender=Pereval)
+def signal_function_name(sender, instance, using, **kwargs):
+    try:
+        instance.coords.delete()
+    except AttributeError:
+        pass
+    try:
+        instance.level.delete()
+    except AttributeError:
+        pass
+
 
 
 class PerevalImage(models.Model):
