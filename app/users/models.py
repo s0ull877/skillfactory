@@ -10,18 +10,22 @@ class UserProfile(models.Model):
     fam = models.CharField(
         max_length=32,
         verbose_name='Фамилия пользователя')
-    oct = models.CharField(
+    otc = models.CharField(
         max_length=32,
         blank=True, null=True,
         verbose_name='Отчество пользователя')
     phone=models.CharField(
         verbose_name='Номер телефона', 
-        max_length=15)
+        max_length=32)
     email=models.EmailField(
         verbose_name='Эл. почта',
         unique=True)
 
 
+    @property
     def full_name(self):
 
         return f'{self.name} {self.fam} {self.otc}'
+
+    def __str__(self):
+        return f'{self.email} | {self.full_name}'

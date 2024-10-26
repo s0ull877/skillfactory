@@ -104,7 +104,7 @@ class Pereval(models.Model):
 
 
 @receiver(pre_delete, sender=Pereval)
-def signal_function_name(sender, instance, using, **kwargs):
+def delete_related_fields(sender, instance, using, **kwargs):
     try:
         instance.coords.delete()
     except AttributeError:
