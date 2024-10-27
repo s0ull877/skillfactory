@@ -1,9 +1,13 @@
+import os
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 
+from app.settings import MEDIA_ROOT
 from users.models import UserProfile
-from django.db.models.signals import pre_delete
+from django.db.models.signals import pre_delete, post_delete
 from django.dispatch import receiver
+
+
 
 class PerevalLevel(models.Model):
 
@@ -115,7 +119,6 @@ def delete_related_fields(sender, instance, using, **kwargs):
         pass
 
 
-
 class PerevalImage(models.Model):
 
     to_pereval=models.ForeignKey(
@@ -127,3 +130,9 @@ class PerevalImage(models.Model):
     image = models.ImageField(
         upload_to='perevals_images/',
         verbose_name='Изображение')
+
+@receiver(post_delete, sender=PerevalImage)
+def delete_related_fields(sender, instance, using, **kwargs):
+
+    path = MEDIA_ROOT / instance.image.name
+    os.remove(path)
