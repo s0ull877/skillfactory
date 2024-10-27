@@ -6,6 +6,6 @@ from .views import submitData
 app_name="rest_api"
 
 urlpatterns = [
-    path('pereval-add/', submitData)
+    path('submitData/', submitData)
 ]
 
