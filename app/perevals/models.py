@@ -64,6 +64,13 @@ class Coordinates(models.Model):
 
 class Pereval(models.Model):
 
+    CHOICES = (
+        (0, 'new',),
+        (1, 'pending',),
+        (2, 'accepted',),
+        (3, 'rejected',),
+    )
+
     beauty_title=models.CharField(
         verbose_name='Заголовок'
     )
@@ -97,6 +104,11 @@ class Pereval(models.Model):
     created_at = models.DateTimeField(
         verbose_name='Дата создания',
         auto_now_add=True, editable=False
+    )
+    status = models.PositiveSmallIntegerField(
+        verbose_name='Статус модерации',
+        choices=CHOICES,
+        default=0, blank=True
     )
 
     def __str__(self) -> str:
