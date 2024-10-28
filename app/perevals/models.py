@@ -65,10 +65,10 @@ class Coordinates(models.Model):
 class Pereval(models.Model):
 
     CHOICES = (
-        (0, 'new',),
-        (1, 'pending',),
-        (2, 'accepted',),
-        (3, 'rejected',),
+        ('new', 'new',),
+        ('pending', 'pending',),
+        ('accepted', 'accepted',),
+        ('rejected', 'rejected',),
     )
 
     beauty_title=models.CharField(
@@ -105,10 +105,10 @@ class Pereval(models.Model):
         verbose_name='Дата создания',
         auto_now_add=True, editable=False
     )
-    status = models.PositiveSmallIntegerField(
+    status = models.CharField(
         verbose_name='Статус модерации',
-        choices=CHOICES,
-        default=0, blank=True
+        choices=CHOICES, max_length=8,
+        default='new', blank=True
     )
 
     def __str__(self) -> str:
