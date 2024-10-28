@@ -1,6 +1,9 @@
+import re
+
 from django.db import transaction
-from django.core.files.base import ContentFile
 from django.forms import ValidationError
+from django.core.exceptions import BadRequest
+from django.core.files.base import ContentFile
 
 from rest_framework import serializers
 
@@ -35,7 +38,7 @@ class PerevalSerializer(serializers.ModelSerializer):
     class Meta:
         
         model = Pereval
-        fields = ('beauty_title', 'title', 'connect', 'add_time', 'user', 'coords', 'level', 'images')
+        fields = ('beauty_title', 'title', 'other_titles', 'connect', 'add_time', 'user', 'coords', 'level', 'images')
 
 
     # проверка ключей, для последующей подготовки, 
@@ -49,18 +52,62 @@ class PerevalSerializer(serializers.ModelSerializer):
                 raise ValidationError(f'Field {ex.args[0]} in images element is required!')
 
         return images
+    
 
     # делаю из кодированных байтов ContentFile, для дальнейшей обработки ImageField
-    def prepare_images(self, images):
-        for i in range(0, len(images)):
-            images[i]['data'] = ContentFile(images[i]['data'], name='image.jpg')
+    def prepare_image(self, image):
 
-        return images
+        return {
+            'title': image['title'],
+            'data': ContentFile(image['data'], name='image.jpg')
+            }
+    
+    
+    # запарно работать с фото, вынес в отдельную функцию
+    def update_images(self, instance: Pereval, images: list):
+
+        # получение текущих фотографий
+        self_images = instance.images.all()
+        # новые фото
+        for image in images:
+
+            # если в data находится url, то проверим, есть ли он в текущих
+            match = re.search(r'/media/(perevals_images/image_[^/]+.jpg)',image['data'])
+            if match:
+
+                try:
+                    perevalimage = self_images.filter(image=match.group(1))
+                    perevalimage.update(title=image['title'])
+                    # если есть, мы вытаскиваем его из queryset, чтобы не удалять
+                    self_images = self_images.exclude(pk=perevalimage.first().id)
+
+                except perevalimage.DoesNotExist:
+                    # иначе пишем что он невалидный
+                    raise BadRequest("Incorect uri. Images index {}. If u want add new file, send with base64".format(images.index(image)))
+
+            # новые фото мы создаем и присваиваем к instance
+            else:
+                image = self.prepare_image(image=image)
+                PerevalImage.objects.create(
+                    to_pereval=instance,
+                    title=image['title'],
+                    image=image['data']
+                )
+
+        # в результате в текущих фотографиях остаются фото
+        # который нет validated_data, если их нет в запросе,
+        # то нет и на сервере
+        # грубо говоря, если у нас на перевале 3 текущих фото,
+        # а в запросе пришло 2 фото, то мы удаляем лишнюю
+        self_images.delete()
 
 
     def create(self, validated_data):
 
-        validated_data['images'] = self.prepare_images(validated_data['images'])
+        validated_data['new_images'] = []
+
+        for image in validated_data['images']:
+            validated_data['new_images'].append(self.prepare_image(image))
 
         # атомарная транзакция, ибо если будет какой-то косяк, 
         # то смысла в предшевствующих запросах больше нет
@@ -79,7 +126,7 @@ class PerevalSerializer(serializers.ModelSerializer):
                 level=level
             )
 
-            for image in validated_data.pop('images'):
+            for image in validated_data.pop('new_images'):
                     
                     PerevalImage.objects.create(
                         to_pereval=instance,
@@ -89,6 +136,27 @@ class PerevalSerializer(serializers.ModelSerializer):
             
         return instance
     
+
+    def update(self, instance, validated_data):
+        
+        if instance.status != 'new':
+            raise BadRequest("This pereval cant be edited, because status not 'new'.")
+        
+        user = validated_data.pop('user')
+        for attr in user.keys():
+
+            if user[attr] != getattr(instance.user, attr): 
+                raise BadRequest(f'You cant edit user data: {attr}')
+        
+
+        instance.coords.__class__.objects.filter(pk=instance.coords.id).update(**validated_data.pop('coords'))
+        instance.level.__class__.objects.filter(pk=instance.level.id).update(**validated_data.pop('level'))
+
+        self.update_images(instance, validated_data.pop('images'))
+
+        self.Meta.model.objects.filter(pk=instance.id).update(**validated_data)
+        
+        return instance
 
     
     def to_representation(self, instance):
