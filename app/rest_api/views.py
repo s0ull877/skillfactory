@@ -1,8 +1,7 @@
-from django.forms import ValidationError
 from rest_framework import response, status
 from rest_framework.decorators import api_view
 
-from perevals.serializers import PerevalSerializer
+from perevals.serializers import PerevalSerializer, UserProfile
 from django.core.exceptions import BadRequest
 
 
@@ -49,25 +48,45 @@ def getedit_pereval(request, pk):
         
         
 
-@api_view(['POST'])
+@api_view(['POST', 'GET'])
 def submitData(request):
-        
-    try:
 
-        serializer = PerevalSerializer(data=request.data) 
+    if request.method == 'POST':    
+        try:
 
-        if serializer.is_valid():
+            serializer = PerevalSerializer(data=request.data) 
 
-            pereval = serializer.save(**request.data)
-            return response.Response(data={'status': 200, 'message': None, 'id': pereval.id}, status=status.HTTP_201_CREATED)
-        
-        else:
+            if serializer.is_valid():
 
-            return response.Response(data={'status': 400, 'message': serializer.errors, 'id': None}, status=status.HTTP_400_BAD_REQUEST)
+                pereval = serializer.save(**request.data)
+                return response.Response(data={'status': 200, 'message': None, 'id': pereval.id}, status=status.HTTP_201_CREATED)
+            
+            else:
 
-    except Exception as ex:
+                return response.Response(data={'status': 400, 'message': serializer.errors, 'id': None}, status=status.HTTP_400_BAD_REQUEST)
 
-        return response.Response(data={'status': 500, 'message': str(ex), 'id': None}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as ex:
+
+            return response.Response(data={'status': 500, 'message': str(ex), 'id': None}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-        
+    else:
+
+        try:
+            # perevals = PerevalSerializer.objects.filter(**request.query_params)
+            perevals = PerevalSerializer.Meta.model.objects.filter(user__email=request.query_params['user__email'])
+
+            if not perevals.exists():
+                return response.Response(data={'perevals': None, 'message': 'User with this email not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+            else:
+                serializer = PerevalSerializer(perevals, many=True)
+                return response.Response(data={'perevals': serializer.data, 'message': None}, status=status.HTTP_201_CREATED)
+
+
+        except KeyError:
+            return response.Response(data={'perevals': None, 'message': 'Invalid query params, expected `user__email`'}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as ex:
+
+            return response.Response(data={'perevals': None, 'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
