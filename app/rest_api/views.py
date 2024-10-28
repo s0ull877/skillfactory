@@ -1,11 +1,23 @@
 from rest_framework import response, status
 from rest_framework.decorators import api_view
 
-import base64
+from perevals.serializers import PerevalSerializer
 
-from perevals.serializers import PerevalSerializer, PerevalImage
 
-from django.core.files.base import ContentFile
+
+@api_view(['PATCH', 'GET'])
+def getedit_pereval(request, pk):
+
+    if request.method == 'GET':
+
+        try:
+            pereval = PerevalSerializer.Meta.model.objects.prefetch_related('images').select_related('coords', 'level', 'user').get(pk=pk)
+        except PerevalSerializer.Meta.model.DoesNotExist:
+            return  response.Response(data={'pereval': None}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = PerevalSerializer(pereval)
+        return  response.Response(data={'pereval': serializer.data}, status=status.HTTP_200_OK)
+        ...
 
 
 @api_view(['POST'])
@@ -32,3 +44,5 @@ def submitData(request):
     finally:
 
         return  resp
+        
+        
