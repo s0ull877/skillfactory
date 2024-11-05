@@ -7,6 +7,6 @@ app_name="rest_api"
 
 urlpatterns = [
     path('submitData/', submitData, name='submitData'),
-    path('submitData/<int:pk>', getedit_pereval, name='submitDataWith')
+    path('submitData/<int:pk>', getedit_pereval, name='submitDataPK')
 ]
 
