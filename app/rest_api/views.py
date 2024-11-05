@@ -66,8 +66,21 @@ def getedit_pereval(request, pk):
 test_param = openapi.Parameter('user__email', openapi.IN_QUERY, description="user email param", type=openapi.TYPE_STRING)
 user_response = openapi.Response('response description', PerevalSerializer) 
 
-@swagger_auto_schema(method='get', manual_parameters=[test_param])
-@swagger_auto_schema(method='post', request_body=PerevalSerializer)
+@swagger_auto_schema(method='get', manual_parameters=[test_param],
+                     operation_description='Получение всех обьектов pereval созданных пользователем указанным в user__email', 
+                     responses={
+                        200: PerevalSerializer(many=True),
+                        400: json.dumps({'pereval': None, 'message': 'Invalid query params, expected `user__email`'}),
+                        404: json.dumps({'pereval': None, 'message': 'User with this email not found.'}),
+                        500: json.dumps({'pereval': None, 'message': 'Some server error'}),
+                     })
+@swagger_auto_schema(method='post', request_body=PerevalSerializer,
+                     operation_description='Создание обьекта pereval', 
+                     responses={
+                        201: json.dumps({'status': 200, 'message': None, 'id': 'id of created object here'}),
+                        400: json.dumps({'status': 400, 'message': 'some serializers errors here', 'id': None}),
+                        500: json.dumps({'status': 500, 'message': 'Some server error', 'id': None}),
+                     })
 @api_view(['POST', 'GET'])
 def submitData(request):
 
@@ -100,7 +113,7 @@ def submitData(request):
             
             else:
                 serializer = PerevalSerializer(perevals, many=True)
-                return response.Response(data={'perevals': serializer.data, 'message': None}, status=status.HTTP_201_CREATED)
+                return response.Response(data={'perevals': serializer.data, 'message': None}, status=status.HTTP_200_OK)
 
 
         except KeyError:

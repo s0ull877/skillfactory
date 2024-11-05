@@ -113,6 +113,7 @@ class Pereval(models.Model):
 
     def __str__(self) -> str:
         return f'{self.connect}'.join([self.beauty_title, self.title, self.other_titles])
+        # return f'{self.pk}'
 
     class Meta:
 
