@@ -63,6 +63,12 @@ def getedit_pereval(request, pk):
 
 
 
+
+
+
+
+
+
 test_param = openapi.Parameter('user__email', openapi.IN_QUERY, description="user email param", type=openapi.TYPE_STRING)
 user_response = openapi.Response('response description', PerevalSerializer) 
 
@@ -105,7 +111,7 @@ def submitData(request):
     else:
 
         try:
-            # perevals = PerevalSerializer.objects.filter(**request.query_params)
+            temp = request.query_params['user__email'] == 'qwerty@com.ru'
             perevals = PerevalSerializer.Meta.model.objects.filter(user__email=request.query_params['user__email'])
 
             if not perevals.exists():

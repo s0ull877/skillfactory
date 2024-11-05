@@ -6,7 +6,7 @@ from .views import submitData, getedit_pereval
 app_name="rest_api"
 
 urlpatterns = [
-    path('submitData/', submitData),
-    path('submitData/<int:pk>', getedit_pereval)
+    path('submitData/', submitData, name='submitData'),
+    path('submitData/<int:pk>', getedit_pereval, name='submitDataWith')
 ]
 
