@@ -3,7 +3,7 @@ DEBUG=False
 
 DB_ENGINE=django.db.backends.postgresql_psycopg2
 DB_NAME=postgres
-FSTR_DB_HOST=localhost
+FSTR_DB_HOST=db
 FSTR_DB_PORT=5432
 FSTR_DB_LOGIN=postgres
 FSTR_DB_PASS=postgres
