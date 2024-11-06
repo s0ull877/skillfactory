@@ -72,7 +72,7 @@ class PerevalSerializer(serializers.ModelSerializer):
         for image in images:
 
             # если в data находится url, то проверим, есть ли он в текущих
-            match = re.search(r'/media/(perevals_images/image_[^/]+.jpg)',image['data'])
+            match = re.search(r'/media/(perevals_images/image[^/]+.jpg)',image['data'])
             if match:
 
                 try:
